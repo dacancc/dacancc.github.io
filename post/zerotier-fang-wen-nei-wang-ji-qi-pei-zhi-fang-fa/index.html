@@ -1,0 +1,219 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>zerotier访问内网设备教程，适用于所有linux设备（非openwrt） | 大仓的学习笔记</title>
+<link rel="shortcut icon" href="https://dacancc.github.io/favicon.ico?v=1661755022435">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://dacancc.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="zerotier访问内网设备教程，适用于所有linux设备（非openwrt） | 大仓的学习笔记 - Atom Feed" href="https://dacancc.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="zerotier是优秀且简单的异地P2P组网方案
+现在网上大多是基于openwrt通过zerotier访问内网设备的教程，这里给出一篇配置任意linux设备都通用的教程
+通过配置，我同城距离30公里的同一运营商的机器通过zerotier组网..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://dacancc.github.io">
+  <img class="avatar" src="https://dacancc.github.io/images/avatar.png?v=1661755022435" alt="">
+  </a>
+  <h1 class="site-title">
+    大仓的学习笔记
+  </h1>
+  <p class="site-description">
+    人生苦短，及时行乐
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              zerotier访问内网设备教程，适用于所有linux设备（非openwrt）
+            </h2>
+            <div class="post-info">
+              <span>
+                2022-08-28
+              </span>
+              <span>
+                2 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content" v-pre>
+                <p>zerotier是优秀且简单的异地P2P组网方案</p>
+<p>现在网上大多是基于openwrt通过zerotier访问内网设备的教程，这里给出一篇配置任意linux设备都通用的教程</p>
+<p>通过配置，我同城距离30公里的同一运营商的机器通过zerotier组网互访的延迟在6ms左右（电信到电信）<br>
+<img src="https://dacancc.github.io/post-images/1661656252638.png" alt="" loading="lazy"><br>
+同城距离30公里的不同运营商的机器通过zerotier组网互访的延迟在13ms左右（移动到电信）<br>
+<img src="https://dacancc.github.io/post-images/1661656426566.png" alt="" loading="lazy"></p>
+<h2 id="zerotier安装及配置">zerotier安装及配置</h2>
+<h3 id="安装zerotier">安装zerotier</h3>
+<pre><code>curl -s https://install.zerotier.com | sudo bash
+</code></pre>
+<h3 id="服务器加入zerotier虚拟网络">服务器加入zerotier虚拟网络</h3>
+<pre><code>sudo zerotier-cli join &lt;网络ID&gt;  #网络ID在https://my.zerotier.com/中获得
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://dacancc.github.io/post-images/1661657382611.png" alt="" loading="lazy"></figure>
+<h3 id="在httpsmyzerotiercom中配置manager-router">在<code>https://my.zerotier.com/</code>中配置Manager Router</h3>
+<p><img src="https://dacancc.github.io/post-images/1661657701317.png" alt="" loading="lazy"><br>
+至此在<code>https://my.zerotier.com/</code>上的配置完毕，我们转回内网服务器配置</p>
+<h3 id="内网服务器开启ip转发">内网服务器开启IP转发</h3>
+<pre><code>sudo sysctl -w net.ipv4.ip_forward=1
+</code></pre>
+<h3 id="查看物理网卡名及zerotier虚拟网卡名">查看物理网卡名及zerotier虚拟网卡名</h3>
+<pre><code>ip a
+</code></pre>
+<p><img src="https://dacancc.github.io/post-images/1661659992816.png" alt="" loading="lazy"><br>
+如图：eth0为物理网卡，ztfp6ae4cl为zerotier虚拟网卡</p>
+<h3 id="添加iptables规则">添加iptables规则</h3>
+<pre><code>sudo iptables -t nat -A POSTROUTING -o &lt;物理网卡名&gt;  -j MASQUERADE
+</code></pre>
+<pre><code>sudo iptables -A FORWARD -i &lt;物理网卡名&gt;  -o &lt;zerotier网卡名&gt;  -m state --state RELATED,ESTABLISHED -j ACCEPT
+</code></pre>
+<pre><code>sudo iptables -A FORWARD -i &lt;zerotier网卡名&gt;  -o &lt;物理网卡名&gt;  -j ACCEPT
+</code></pre>
+<pre><code>iptables-save
+</code></pre>
+<blockquote>
+<p>大功告成！</p>
+</blockquote>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#zerotier%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE">zerotier安装及配置</a>
+<ul>
+<li><a href="#%E5%AE%89%E8%A3%85zerotier">安装zerotier</a></li>
+<li><a href="#%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%8A%A0%E5%85%A5zerotier%E8%99%9A%E6%8B%9F%E7%BD%91%E7%BB%9C">服务器加入zerotier虚拟网络</a></li>
+<li><a href="#%E5%9C%A8httpsmyzerotiercom%E4%B8%AD%E9%85%8D%E7%BD%AEmanager-router">在<code>https://my.zerotier.com/</code>中配置Manager Router</a></li>
+<li><a href="#%E5%86%85%E7%BD%91%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%BC%80%E5%90%AFip%E8%BD%AC%E5%8F%91">内网服务器开启IP转发</a></li>
+<li><a href="#%E6%9F%A5%E7%9C%8B%E7%89%A9%E7%90%86%E7%BD%91%E5%8D%A1%E5%90%8D%E5%8F%8Azerotier%E8%99%9A%E6%8B%9F%E7%BD%91%E5%8D%A1%E5%90%8D">查看物理网卡名及zerotier虚拟网卡名</a></li>
+<li><a href="#%E6%B7%BB%E5%8A%A0iptables%E8%A7%84%E5%88%99">添加iptables规则</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://dacancc.github.io/post/jiu-dian-zhi-bo-yuan-ding-shi-geng-xin/">
+              <h3 class="post-title">
+                酒店直播源定时更新脚本
+              </h3>
+            </a>
+          </div>
+        
+
+        
+
+        <div class="site-footer">
+  Email：xgpbbd@outlook.com
+  <a class="rss" href="https://dacancc.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>

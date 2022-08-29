@@ -1,0 +1,321 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>酒店直播源定时更新脚本 | 大仓的学习笔记</title>
+<link rel="shortcut icon" href="https://dacancc.github.io/favicon.ico?v=1661755022435">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://dacancc.github.io/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="酒店直播源定时更新脚本 | 大仓的学习笔记 - Atom Feed" href="https://dacancc.github.io/atom.xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+
+
+
+    <meta name="description" content="
+
+第一篇博客，欢迎指教
+
+起因
+之前瞎逛发现一个博客写了一篇关于酒店iptv源的文章，才发现原来酒店源一直很稳定，清晰度不错(8M)，只是每天IP都会变化，不过IP只会变化最后一位（如192.168.1.XX）
+所以根据这一特性，我们只用..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://dacancc.github.io">
+  <img class="avatar" src="https://dacancc.github.io/images/avatar.png?v=1661755022435" alt="">
+  </a>
+  <h1 class="site-title">
+    大仓的学习笔记
+  </h1>
+  <p class="site-description">
+    人生苦短，及时行乐
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+  <div class="social-container">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</div>
+
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              酒店直播源定时更新脚本
+            </h2>
+            <div class="post-info">
+              <span>
+                2022-08-24
+              </span>
+              <span>
+                7 min read
+              </span>
+              
+            </div>
+            
+            <div class="post-content-wrapper">
+              <div class="post-content" v-pre>
+                <!-- more -->
+<blockquote>
+<p>第一篇博客，欢迎指教</p>
+</blockquote>
+<h2 id="起因">起因</h2>
+<p>之前瞎逛发现一个博客写了一篇关于酒店iptv源的文章，才发现原来酒店源一直很稳定，清晰度不错(8M)，只是每天IP都会变化，不过IP只会变化最后一位（如192.168.1.XX）</p>
+<p>所以根据这一特性，我们只用写一个脚本放在服务器上每天定时运行就可以得到一个长期稳定的直播源了（原文也给出了一些方法，但不是很完善）</p>
+<h2 id="扫源">扫源</h2>
+<p>首先找到一个还不错的酒店源，如：<code>http://192.168.1.36:9901//tsfile/live/0001_1.m3u8</code></p>
+<p>打开终端，输入<code>apt update</code>更新一下软件源，接着输入<code>apt install nmap</code>安装nmap, 还要用到python，不过一般lniux发行版都有预置，不用另行安装，我们的脚本用的都是python内置的库，不需要另行安装第三方库</p>
+<p>首先我们验证一下这个酒店源的IP，终端输入：</p>
+<pre><code>nmap 192.168.1.0/24 -p 9901 --open | egrep - o &quot;192.168.1.[0-9]+&quot;
+</code></pre>
+<p>终端输出：</p>
+<pre><code>192.168.1.22
+192.168.1.78
+</code></pre>
+<p>可能会输出多个IP，这些IP一般都能使用</p>
+<p>这条命令是验证<code>192.168.1.0/24</code>这个网段上<code>9901端口</code>open的IP，也就是能够观看直播的IP</p>
+<p>接着我们将得到的IP替换在网上找的源IP，如：将192.168.1.36替换为192.168.1.22得到<code>http://192.168.1.22:9901//tsfile/live/0001_1.m3u8</code></p>
+<p>打开<a href="https://guihet.com/blackbird-player.html">黑鸟播放器</a>扫源工具，<a href="https://www.daniu522.com/thread-19497-1-1.html">扫源教程点我</a>，扫完之后的到一个完整的txt播放列表，如：</p>
+<pre><code>··· ···
+001,http://192.168.1.22:9901/tsfile/live/0001_1.m3u8
+002,http://192.168.1.22:9901/tsfile/live/0002_1.m3u8
+003,http://192.168.1.22:9901/tsfile/live/0003_1.m3u8
+··· ···
+049,http://192.168.1.22:9901/tsfile/live/0019_1.m3u8
+··· ···
+</code></pre>
+<p>可以稍加转换为m3u列表或其他匹配你所使用的播放器的列表。列表转换工具<a href="https://guihet.com/tvlive-telelist.html">点我</a>，在线转换<a href="https://guihet.com/tvlistconvert.html">点我</a>，感谢<a href="https://guihet.com/">黑鸟博客</a></p>
+<p>然后把里面的频道名备注好方便观看。一般这个IP明天就会失效，所以接下来我们需要写一个脚本，每日定时更新源的IP(创建的直播列表，除了IP的最后一位会每天变化外，其他都不会变)</p>
+<p>至此，列表制作完毕，我把列表放在<code>/var/www/html/iptv.txt</code>，到时候起一个http服务，方便其他设备获取</p>
+<h2 id="脚本">脚本</h2>
+<p>思路明确，开搞：</p>
+<pre><code>vim update_iptv.py
+</code></pre>
+<pre><code>import re
+import os
+
+r = os.popen('nmap 192.168.1.0/24 -p 9901 --open|egrep -o &quot;192.168.1.[0-9]+&quot;').read()
+#获取能够观看直播的IP并存储为string
+new_IP = r.split(&quot;\n&quot;)[0]
+#将获取到的文本利用split函数拆分为列表，并取列表的第一个IP
+
+with open(r'/var/www/html/iptv.txt', 'r',encoding='UTF-8') as file:
+#打开iptv源列表，/var/www/html/iptv.txt改为你的iptv源存放的位置
+        data = file.read()
+
+new_list = re.sub(pattern='192.168.1.[0-9]+',repl=new_IP,string=data,flags=re.S)
+#利用re库的sub方法将失效的旧IP替换为刚才获取的新IP
+
+with open(r'/var/www/html/iptv.txt',&quot;w&quot;,encoding=&quot;utf-8&quot;) as file: 
+    file.write(new_list)
+#更新iptv列表，/var/www/html/iptv.txt改为你的iptv源存放的位置
+</code></pre>
+<p>至此脚本编写完毕！把这个脚本随意放到一个位置，我这边放在<code>/root/update_iptv.py</code></p>
+<h2 id="crontap定时执行脚本">crontap定时执行脚本</h2>
+<p>终端输入：</p>
+<pre><code>crontap -e 
+#第一次运行需要选择编辑器，选择你常用的即可
+然后在最后添加一条
+0 6 * * * /usr/bin/python3 /root/update_iptv.py
+#每日6点执行该python程序，/root/update_iptv.py为python程序位置
+</code></pre>
+<blockquote>
+<p>题外话<br>
+菜鸡学习笔记，欢迎指导！</p>
+</blockquote>
+<h3 id="apache部署直播源">apache部署直播源</h3>
+<p>终端输入<code>apt install apache</code>，将<code>/var/www/html</code>目录下的文件清空，然后将直播源放到<code>/var/www/html</code>目录下，浏览器输入服务器的IP即可访问：<br>
+<img src="https://dacancc.github.io/post-images/1661413341682.png" alt="" loading="lazy"><br>
+在你的播放器输入例如：<code>http://192.168.1.11/iptv.txt</code>即可加载列表</p>
+<h3 id="re库的使用">re库的使用</h3>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>re.search()</td>
+<td>从一个字符串中搜索匹配正则表达式的第一个位置，返回match对象</td>
+</tr>
+<tr>
+<td>re.match()</td>
+<td>从一个字符串的开始位置起匹配正则表达式，返回match对象</td>
+</tr>
+<tr>
+<td>re.findall()</td>
+<td>搜索字符串，以列表类型返回全部能匹配的子串</td>
+</tr>
+<tr>
+<td>re.split()</td>
+<td>将一个字符串按照正则表达式匹配结果进行分割，返回列表类型</td>
+</tr>
+<tr>
+<td>re.finditer()</td>
+<td>搜索字符串，返回一个匹配结果的迭代类型，每个迭代元素是match对象</td>
+</tr>
+<tr>
+<td>re.sub()</td>
+<td>在一个字符串中替换所有匹配正则表达式的子串，返回替换后的字符串</td>
+</tr>
+</tbody>
+</table>
+<h3 id="python-os模块的使用">Python os模块的使用</h3>
+<h3 id="nmap的使用">nmap的使用</h3>
+<p>nmap -sT 目标ip  //TCP连接扫描，不安全，慢<br>
+nmap -sS 目标ip  //SYN扫描,使用最频繁，安全，快<br>
+nmap -Pn 目标ip  //目标机禁用ping，绕过ping扫描<br>
+nmap -sU 目标ip  //UDP扫描,慢,可得到有价值的服务器程序<br>
+nmap -sI 僵尸ip 目标ip  //使用僵尸机对目标机发送数据包<br>
+nmap -sA 目标ip  //检测哪些端口被屏蔽<br>
+nmap 目标ip -p <portnumber>  //对指定端口扫描<br>
+nmap 目标网段   //对整个网段的主机进行扫描<br>
+nmap 目标ip -oX myscan.xml //对扫描结果另存在myscan.xml<br>
+nmap -T1~6 目标ip  //设置扫描速度，一般T4足够。<br>
+nmap -sV 目标ip  //对端口上的服务程序版本进行扫描<br>
+nmap -O 目标ip  //对目标主机的操作系统进行扫描<br>
+nmap -sC <scirptfile> 目标ip  //使用脚本进行扫描，耗时长<br>
+nmap -A 目标ip  //强力扫描，耗时长<br>
+nmap -6 ipv6地址   //对ipv6地址的主机进行扫描<br>
+nmap -f 目标ip  //使用小数据包发送，避免被识别出<br>
+nmap –mtu <size> 目标ip //发送的包大小,最大传输单元必须是8的整数<br>
+nmap -D &lt;假ip&gt; 目标ip //发送参杂着假ip的数据包检测<br>
+nmap --source-port <portnumber> //针对防火墙只允许的源端口<br>
+nmap –data-length: <length> 目标ip //改变发生数据包的默认的长度，避免被识别出来是nmap发送的。<br>
+nmap -v 目标ip  //显示冗余信息(扫描细节)<br>
+nmap -sn 目标ip  //对目标进行ping检测，不进行端口扫描（会发送四种报文确定目标是否存活,）<br>
+nmap -sP 目标ip  //仅仅对目标进行ping检测。<br>
+nmap -n/-p 目标ip  //-n表示不进行dns解析，-p表示要<br>
+nmap --system-dns 目标ip  //扫描指定系统的dns服务器<br>
+nmap –traceroute 目标ip  //追踪每个路由节点。<br>
+nmap -PE/PP/PM: 使用ICMP echo, timestamp, and netmask 请求包发现主机。<br>
+nmap -sP 目标ip       //主机存活性扫描，arp直连方式。<br>
+nmap -iR [number]       //对随机生成number个地址进行扫描。</p>
+<h3 id="crontap的使用">crontap的使用</h3>
+<blockquote>
+<p>大功告成！！！（该教程未完成）</p>
+</blockquote>
+
+              </div>
+              <div class="toc-container">
+                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E8%B5%B7%E5%9B%A0">起因</a></li>
+<li><a href="#%E6%89%AB%E6%BA%90">扫源</a></li>
+<li><a href="#%E8%84%9A%E6%9C%AC">脚本</a></li>
+<li><a href="#crontap%E5%AE%9A%E6%97%B6%E6%89%A7%E8%A1%8C%E8%84%9A%E6%9C%AC">crontap定时执行脚本</a>
+<ul>
+<li><a href="#apache%E9%83%A8%E7%BD%B2%E7%9B%B4%E6%92%AD%E6%BA%90">apache部署直播源</a></li>
+<li><a href="#re%E5%BA%93%E7%9A%84%E4%BD%BF%E7%94%A8">re库的使用</a></li>
+<li><a href="#python-os%E6%A8%A1%E5%9D%97%E7%9A%84%E4%BD%BF%E7%94%A8">Python os模块的使用</a></li>
+<li><a href="#nmap%E7%9A%84%E4%BD%BF%E7%94%A8">nmap的使用</a></li>
+<li><a href="#crontap%E7%9A%84%E4%BD%BF%E7%94%A8">crontap的使用</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+              </div>
+            </div>
+          </article>
+        </div>
+
+        
+
+        
+
+        <div class="site-footer">
+  Email：xgpbbd@outlook.com
+  <a class="rss" href="https://dacancc.github.io/atom.xml" target="_blank">
+    <i class="ri-rss-line"></i> RSS
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    <script>
+      hljs.initHighlightingOnLoad()
+
+      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
+
+      // This should probably be throttled.
+      // Especially because it triggers during smooth scrolling.
+      // https://lodash.com/docs/4.17.10#throttle
+      // You could do like...
+      // window.addEventListener("scroll", () => {
+      //    _.throttle(doThatStuff, 100);
+      // });
+      // Only not doing it here to keep this Pen dependency-free.
+
+      window.addEventListener("scroll", event => {
+        let fromTop = window.scrollY;
+
+        mainNavLinks.forEach((link, index) => {
+          let section = document.getElementById(decodeURI(link.hash).substring(1));
+          let nextSection = null
+          if (mainNavLinks[index + 1]) {
+            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
+          }
+          if (section.offsetTop <= fromTop) {
+            if (nextSection) {
+              if (nextSection.offsetTop > fromTop) {
+                link.classList.add("current");
+              } else {
+                link.classList.remove("current");    
+              }
+            } else {
+              link.classList.add("current");
+            }
+          } else {
+            link.classList.remove("current");
+          }
+        });
+      });
+
+    </script>
+  </body>
+</html>
